@@ -1,0 +1,38 @@
+version: "2.1"
+
+services:
+  postgres:
+    image: postgres:11.5
+    environment:
+      POSTGRES_DB: bank
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: supersecretpassword
+    volumes:
+    - ../postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - bank-example-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d bank -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bank-example:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bank-example
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bank-example-net
+    env_file: .env
+
+networks:
+  bank-example-net:
+    driver: bridge
